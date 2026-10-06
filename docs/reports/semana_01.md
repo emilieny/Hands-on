@@ -1,8 +1,10 @@
 # Relatório de Atividades - Semana 01
 
-**Projeto:** Acelerador AES com interface SPI e baixo consumo  
-**Autor:** Emilieny De Souza Silva 
-**Tag:** `w01-setup-v1.0`
+| Campo | Informação |
+| --- | --- |
+| Projeto | Acelerador AES com interface SPI e baixo consumo |
+| Autor | Emilieny De Souza Silva |
+| Tag | `w01-setup-v1.0` |
 
 ---
 
@@ -16,6 +18,7 @@ Nesta primeira semana, foi realizado o setup inicial do ambiente de desenvolvime
 
 O repositório foi organizado seguindo a estrutura padrão de projetos de microeletrônica/ASIC:
 
+```text
 .
 ├── docs/               # Documentação, especificações e relatórios
 │   ├── architecture/
@@ -26,17 +29,20 @@ O repositório foi organizado seguindo a estrutura padrão de projetos de microe
 ├── syn/                # Scripts Tcl (synth.tcl), constraints (constraints.sdc) e relatórios
 ├── upf/                # Especificação de potência em UPF
 └── scripts/            # Automação e utilitários
+```
 
 ---
 
 ## 3. Automação e Fluxo (Makefile & Scripts EDA)
 
 Foi configurado o `Makefile` com suporte às ferramentas da Synopsys:
+
 - **`vlogan` / `vcs`:** Compilação e simulação em SystemVerilog (`+lint=all`).
 - **`verdi`:** Visualização de formas de onda (arquivos `.fsdb`).
 - **`dc_shell`:** Síntese lógica via Synopsys Design Compiler.
 
-### Configuração de Síntese (`syn/synth.tcl` & PDK):
+### Configuração de síntese (`syn/synth.tcl` e PDK)
+
 - **Biblioteca Alvo:** SAED32 32nm Digital EDA Kit (`saed32rvt_tt1p05v25c.db`).
 - **Constraints Iniciais (`syn/constraints.sdc`):**
   - Domínio `clk_sys`: 50 MHz (Período: 20 ns).
@@ -48,73 +54,73 @@ Foi configurado o `Makefile` com suporte às ferramentas da Synopsys:
 ## 4. Estudo Teórico
 
 ### 4.1. Algoritmo AES-128 (FIPS-197)
-O **Advanced Encryption Standard (AES)** é um algoritmo de criptografia simétrica baseado em blocos, padronizado pelo NIST em 2001, e sua variante de 128 bits é amplamente utilizada em sistemas embarcados, redes e hardware dedicado por oferecer um equilíbrio entre segurança, simplicidade de implementação e desempenho. O algoritmo processa blocos de 128 bits e utiliza uma chave secreta também de 128 bits, resultando em um fluxo de 10 rodadas de transformação.
 
-A estrutura interna do AES organiza os 16 bytes do bloco em uma matriz $4 \times 4$ denominada **State**, em que cada byte representa um elemento do campo finito $GF(2^8)$. A cifra é composta por uma etapa inicial de **AddRoundKey** e por 9 rodadas completas, seguidas por uma rodada final sem a operação de **MixColumns**.
+O **Advanced Encryption Standard (AES)** é uma cifra simétrica de bloco padronizada pelo NIST. No AES-128, cada bloco contém 128 bits e a chave também contém 128 bits. O algoritmo processa cada bloco em 10 rodadas.
 
-- **Tamanho do bloco:** 128 bits = 16 bytes.
-- **Tamanho da chave:** 128 bits.
-- **Número de rodadas:** 10 para AES-128.
-- **Subchaves:** a chave inicial é expandida em 11 round keys de 128 bits, sendo uma subchave para a etapa inicial e uma para cada uma das 10 rodadas.
+Os 16 bytes do bloco são organizados em uma matriz de 4 × 4 bytes chamada **State**. Cada byte é tratado como um elemento do campo finito GF(2⁸). O processamento começa com uma etapa **AddRoundKey**, segue com 9 rodadas completas e termina com uma rodada sem **MixColumns**.
+
+| Parâmetro | AES-128 |
+| --- | --- |
+| Tamanho do bloco | 128 bits (16 bytes) |
+| Tamanho da chave | 128 bits |
+| Número de rodadas | 10 |
+| Subchaves | 11 round keys de 128 bits |
 
 #### Etapas da rodada AES
-Cada rodada do algoritmo é definida por quatro transformações principais:
 
-1. **SubBytes**  
-   Realiza uma substituição não linear de cada byte do State por meio da **S-box** AES. A S-box é construída a partir da inversão de elementos em $GF(2^8)$ e de uma transformação afim, que garante resistência contra ataques diferenciais e lineares.
+As rodadas completas aplicam as quatro transformações abaixo, nesta ordem:
 
-2. **ShiftRows**  
-   Desloca circularmente as linhas do State. A linha 0 não sofre deslocamento; a linha 1 desloca 1 byte para a esquerda; a linha 2 desloca 2 bytes; e a linha 3 desloca 3 bytes. Essa etapa promove difusão entre bytes de diferentes colunas.
+1. **SubBytes:** substitui cada byte do State por meio da S-box AES. A S-box usa a inversão em GF(2⁸), seguida de uma transformação afim, e introduz não linearidade.
+2. **ShiftRows:** desloca circularmente as linhas do State para a esquerda. A linha 0 não é deslocada; as linhas 1, 2 e 3 são deslocadas, respectivamente, por 1, 2 e 3 bytes. Isso redistribui os bytes entre colunas.
+3. **MixColumns:** transforma cada coluna por multiplicação por uma matriz fixa em GF(2⁸), contribuindo para a difusão.
+4. **AddRoundKey:** combina o State com a subchave da rodada por meio de XOR.
 
-3. **MixColumns**  
-   Combina os 4 bytes de cada coluna de forma linear, utilizando uma multiplicação em $GF(2^8)$ por uma matriz fixa. Essa operação aumenta a propagação dos bits e é essencial para a segurança da cifra.
-
-4. **AddRoundKey**  
-   Aplica XOR bit a bit entre o State atual e a subchave correspondente da rodada. Como a subchave varia por rodada, o estado fica dependente da chave em cada etapa.
-
-A operação final, após a 9ª rodada completa, executa uma rodada final sem **MixColumns**, consistindo em **SubBytes + ShiftRows + AddRoundKey**. Essa escolha é importante para manter a consistência da estrutura e a compatibilidade com o padrão FIPS-197.
+A rodada final, depois das 9 rodadas completas, aplica **SubBytes**, **ShiftRows** e **AddRoundKey**, sem **MixColumns**.
 
 #### Key Expansion
-O processo de expansão da chave é responsável por gerar as subchaves utilizadas em cada rodada. O AES-128 inicia com uma chave primária de 128 bits e produz, por meio de **RotWord**, **SubWord** e **Rcon**, 11 subchaves. Esse mecanismo é crítico, pois garante que cada rodada tenha um valor específico para mascarar o State e reforçar a segurança do algoritmo. Em implementações em hardware, a geração da chave pode ser feita por um módulo de expansão dedicado ou pela reutilização da mesma lógica em um datapath iterativo.
+
+A expansão da chave gera as 11 subchaves usadas pela etapa inicial e pelas 10 rodadas. No AES-128, ela utiliza as operações **RotWord**, **SubWord** e constantes **Rcon**. Em hardware, a expansão pode ser implementada em um módulo dedicado ou compartilhada ao longo de um datapath iterativo.
 
 #### Observações para implementação em ASIC
-No contexto de arquitetura de circuitos integrados, o AES é frequentemente implementado em duas formas principais:
 
-- **Implementação iterativa:** usa um mesmo conjunto de blocos para executar uma rodada por ciclo, economizando área e potência, sendo adequada para módulos com baixo consumo.
-- **Implementação pipeline/loop unrolled:** executa múltiplas rodadas em paralelo para alcançar maior throughput, porém com aumento de área, complexidade e dissipação.
+| Arquitetura | Características |
+| --- | --- |
+| Iterativa | Reutiliza os recursos para processar rodadas em ciclos sucessivos. Tende a reduzir a área, mas aumenta a latência por bloco. |
+| Unrolled/pipeline | Implementa várias rodadas em paralelo. Pode aumentar o throughput, com maior custo de área e potência. |
 
-Dado o foco do projeto em arquitetura low-power, a implementação iterativa é a opção mais apropriada, pois reduz o número de operadores ativos simultaneamente e favorece a economia energética.
+Como o projeto prioriza baixo consumo, a arquitetura iterativa é uma candidata adequada. A escolha final deve considerar também a frequência, a latência e a área disponíveis.
 
 ### 4.2. Protocolo SPI (Serial Peripheral Interface)
-O **SPI (Serial Peripheral Interface)** é um protocolo síncrono de comunicação serial full-duplex desenvolvido pela Motorola, amplamente utilizado para interconectar microcontroladores, sensores, memorias e módulos de processamento. Sua simplicidade, baixa latência e suporte a comunicação em alta velocidade tornam-no uma opção frequente em sistemas embarcados e em interfaces de periféricos em ASIC/SoC.
 
-#### Topologia e sinais
-A comunicação SPI segue o modelo mestre-escravo, em que um único mestre controla um ou mais escravos. Os sinais fundamentais são:
+O **Serial Peripheral Interface (SPI)** é uma interface serial síncrona, normalmente full-duplex, usada para conectar um controlador a periféricos. O mestre gera o clock e seleciona o escravo com o qual deseja se comunicar.
 
-- **SCLK:** clock serial gerado pelo mestre.
-- **CS_N / SS:** linha de seleção do escravo, normalmente ativa em nível baixo.
-- **MOSI:** linha de dados do mestre para o escravo.
-- **MISO:** linha de dados do escravo para o mestre.
+#### Sinais do barramento
 
-A operação ocorre em modo síncrono, com base no clock gerado pelo mestre. Em cada ciclo de clock, o valor presente em uma linha de dados é amostrado e, em seguida, shiftado em um registrador, permitindo a transferência serial de bits.
+| Sinal | Função |
+| --- | --- |
+| `SCLK` | Clock serial gerado pelo mestre. |
+| `CS_N` / `SS` | Seleciona o escravo; geralmente é ativo em nível baixo. |
+| `MOSI` | Dados do mestre para o escravo. |
+| `MISO` | Dados do escravo para o mestre. |
+
+Enquanto os dados são transmitidos em uma direção, outros dados podem ser recebidos na direção oposta. O SPI não define, por si só, um formato universal de comando, tamanho de palavra ou enquadramento; esses detalhes são definidos pelo dispositivo ou pela implementação.
 
 #### Modos de operação
-O SPI possui quatro modos de operação, definidos por duas variáveis:
 
-- **CPOL:** polaridade do clock em repouso.
-- **CPHA:** fase do clock, isto é, em qual borda os dados são amostrados.
+Os quatro modos SPI são definidos pela polaridade (`CPOL`) e pela fase (`CPHA`) do clock:
 
-Os modos mais comuns são:
+| Modo | CPOL | CPHA | Repouso de SCLK | Borda de amostragem |
+| --- | --- | --- | --- | --- |
+| 0 | 0 | 0 | Baixo | Subida |
+| 1 | 0 | 1 | Baixo | Descida |
+| 2 | 1 | 0 | Alto | Descida |
+| 3 | 1 | 1 | Alto | Subida |
 
-- **Modo 0:** `CPOL = 0`, `CPHA = 0` — o clock permanece baixo em repouso e os dados são amostrados na borda de subida.
-- **Modo 3:** `CPOL = 1`, `CPHA = 1` — o clock permanece alto em repouso e os dados são amostrados na borda de descida.
+No **modo 0**, selecionado para o projeto, `SCLK` fica baixo em repouso; os dados são amostrados na borda de subida e normalmente mudam na borda de descida. O modo precisa ser o mesmo no mestre e no escravo.
 
-No projeto, o uso do **Modo 0** é adequado para uma interface de leitura e escrita em registradores, pois facilita a sincronização do sistema e a leitura em bordas simples do clock.
+#### Transações e integração com o AES
 
-#### Transferência e organização dos dados
-A troca de dados SPI é normalmente organizada em quadros de tamanho fixo, sendo comuns 8, 16 ou 32 bits por palavra. A lógica de hardware geralmente implementa um registrador de deslocamento em ambos os lados, permitindo que os bits sejam enviados e recebidos simultaneamente. Em uma transmissão de 8 bits, o mestre desloca o dado de saída em `MOSI` enquanto o escravo desloca o dado de saída em `MISO`, resultando em comunicação full-duplex.
-
-Em uma arquitetura de bloco criptográfico, a interface SPI é frequentemente usada para:
+O tamanho das palavras e o formato dos quadros não são fixados pelo SPI. Uma implementação pode usar registradores de deslocamento para transmitir e receber bits simultaneamente. Neste bloco, a interface pode ser usada para:
 
 - carregar a chave do AES;
 - enviar o bloco de entrada (`data_in`);
@@ -122,22 +128,17 @@ Em uma arquitetura de bloco criptográfico, a interface SPI é frequentemente us
 - ler o bloco de saída (`data_out`);
 - configurar registradores de controle e status.
 
-#### Desafios de sincronização em hardware
-Como o `SCLK` pode ser gerado por uma fonte externa e assíncrona em relação ao domínio `clk_sys`, o projeto precisa tratar o problema de **CDC (Clock Domain Crossing)**. O sinal `CS_N` e a linha de dados `MOSI` devem ser registradas e sincronizadas antes de acessarem o banco de registradores do sistema, para evitar metastabilidade e garantir operações confiáveis. Uma abordagem comum em RTL é: 
+#### Sincronização entre domínios de clock (CDC)
 
-- amostrar `CS_N` e `MOSI` no domínio do sistema mediante sincronizadores de 2 estágios;
-- gerar sinais de controle locais (por exemplo, `start`, `tx_valid`, `rx_valid`);
-- usar FSM para tratar a transação serial; 
-- sincronizar a resposta `MISO` de volta ao domínio do mestre, quando necessário.
+Se `SCLK` for assíncrono a `clk_sys`, os dados recebidos não devem ser transferidos diretamente entre domínios sem uma estratégia de CDC. Uma arquitetura comum é receber e montar a palavra no domínio `SCLK` e transferir palavras completas ao domínio `clk_sys` por meio de um handshake ou FIFO assíncrona. Sincronizadores de dois estágios são apropriados para sinais de controle de um bit, mas não substituem um mecanismo seguro para barramentos de dados.
 
-Esse ponto é especialmente importante em ambientes ASIC/FPGA, em que o domínio do módulo SPI pode ser desacoplado do clock principal do bloco de processamento.
+O sinal `MISO` também precisa respeitar o modo SPI e os tempos de setup/hold do mestre. A lógica deve definir quando habilitar a saída, normalmente enquanto `CS_N` está ativo, e qual valor apresentar quando o dispositivo não está selecionado.
 
 ### 4.3. Relevância da Integração AES + SPI no Projeto
-A combinação entre o algoritmo AES e a interface SPI é estratégica para um módulo criptográfico dedicado. O AES fornece a funcionalidade criptográfica de segurança, enquanto o SPI atua como uma interface de acesso externa simples, padronizada e eficiente. Essa integração permite que um sistema externo, como um microcontrolador ou um controlador de rede, envie chaves e dados para o módulo, receba resultados cifrados e controle o processamento de forma segura e compacta.
 
-Além disso, em um ambiente de arquitetura low-power, a interface serial reduz a quantidade de pinos e linhas de condução em comparação com interfaces paralelas, diminuindo o consumo de energia e simplificando o layout do circuito. Para o projeto em questão, essa combinação atende tanto aos requisitos de segurança do algoritmo quanto aos critérios de baixo consumo e integração em um bloco IP.
+O AES fornece a função de cifragem, enquanto o SPI permite que um controlador externo configure e acesse o bloco usando poucas linhas de sinal. A interface pode transportar a chave, o bloco de entrada, comandos de início e o resultado, conforme o mapa de registradores definido para o projeto.
 
----
+Uma interface serial também reduz a quantidade de pinos em relação a uma conexão paralela. Isso pode simplificar a integração física; no entanto, o consumo total depende da frequência, da atividade de comutação e da arquitetura implementada, não apenas do número de sinais.
 
 ---
 
@@ -146,4 +147,4 @@ Além disso, em um ambiente de arquitetura low-power, a interface serial reduz a
 - Elaborar a especificação completa da microarquitetura do núcleo AES (modelo iterativo).
 - Definir o mapa de registradores (Controle, Status, Key, DataIn, DataOut).
 - Detalhar a estratégia de sincronização de domínios de clock (CDC).
-- Apresentar o documento de arquitetura $v1.0$ na defesa curta.
+- Apresentar o documento de arquitetura `v1.0` na defesa curta.
