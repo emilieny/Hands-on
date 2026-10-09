@@ -10,7 +10,7 @@
 
 ## 1. Resumo da Semana
 
-Nesta primeira semana, foi realizado o setup inicial do ambiente de desenvolvimento, a estruturação da árvore do repositório Git e a automação do fluxo de compilação, simulação e síntese via `Makefile`. Além disso, foram cadastradas as issues do projeto no GitHub e elaborado o estudo teórico sobre o algoritmo AES-128 (FIPS-197) e a interface de comunicação SPI.
+Nesta primeira semana, foi criado o repositório e preparado um exemplo mínimo de porta AND com RTL, testbench e alvos de compilação, lint e simulação no `Makefile`. Além disso, foram cadastradas as issues do projeto no GitHub e elaborado o estudo teórico sobre o algoritmo AES-128 (FIPS-197) e a interface de comunicação SPI.
 
 ---
 
@@ -20,34 +20,31 @@ O repositório foi organizado seguindo a estrutura padrão de projetos de microe
 
 ```text
 .
-├── docs/               # Documentação, especificações e relatórios
-│   ├── architecture/
-│   ├── reports/        # Relatórios semanais (semana_01.md)
-│   └── spec/
-├── rtl/                # Código SystemVerilog (AES, SPI, Sync, RegFile, PowerCtrl)
-├── tb/                 # Testbenches
-├── syn/                # Scripts Tcl (synth.tcl), constraints (constraints.sdc) e relatórios
-├── upf/                # Especificação de potência em UPF
-└── scripts/            # Automação e utilitários
+├── README.md
+├── Makefile
+├── docs/
+│   └── reports/
+│       └── semana_01.md
+├── rtl/
+│   └── porta_and.sv
+└── tb/
+    └── tb_porta_and.sv
 ```
+
+As pastas e os artefatos de arquitetura, síntese e baixo consumo serão adicionados conforme forem necessários nas próximas etapas.
 
 ---
 
-## 3. Automação e Fluxo (Makefile & Scripts EDA)
+## 3. Ambiente e fluxo mínimo
 
-Foi configurado o `Makefile` com suporte às ferramentas da Synopsys:
+O `Makefile` está preparado para usar as ferramentas Synopsys disponíveis no ambiente do projeto:
 
-- **`vlogan` / `vcs`:** Compilação e simulação em SystemVerilog (`+lint=all`).
-- **`verdi`:** Visualização de formas de onda (arquivos `.fsdb`).
-- **`dc_shell`:** Síntese lógica via Synopsys Design Compiler.
+- `make syntax`: executa `vlogan` em SystemVerilog com `+lint=all`.
+- `make compile`: compila e elabora o testbench com `vcs`.
+- `make run`: encadeia os passos anteriores e executa a simulação.
+- `make wave`: abre no Verdi a forma de onda FSDB, quando gerada.
 
-### Configuração de síntese (`syn/synth.tcl` e PDK)
-
-- **Biblioteca Alvo:** SAED32 32nm Digital EDA Kit (`saed32rvt_tt1p05v25c.db`).
-- **Constraints Iniciais (`syn/constraints.sdc`):**
-  - Domínio `clk_sys`: 50 MHz (Período: 20 ns).
-  - Domínio `sclk`: 10 MHz (Período: 100 ns).
-  - Declaração de domínios assíncronos via `set_clock_groups -asynchronous`.
+O exemplo `porta_and` é um teste do fluxo de ferramentas, não parte do datapath AES. O testbench aplica as quatro combinações das entradas e encerra a simulação.
 
 ---
 
