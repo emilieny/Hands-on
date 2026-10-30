@@ -7,11 +7,17 @@ TB_DIR  = tb
 # ==========================================
 # Arquivos
 # ==========================================
-RTL_FILES = $(RTL_DIR)/porta_and.sv
-TB_FILES  = $(TB_DIR)/tb_porta_and.sv
+RTL_FILES = \
+	$(RTL_DIR)/minisoc_aes/minisoc_aes_sbox.sv \
+	$(RTL_DIR)/minisoc_aes/minisoc_aes_sub_bytes.sv \
+	$(RTL_DIR)/minisoc_aes/minisoc_aes_shift_rows.sv
+
+
+TB_FILES = \
+	$(TB_DIR)/minisoc_aes/tb_semana02.sv
 
 # Top do testbench
-TOP = tb_porta_and
+TOP = tb_semana02
 
 # ==========================================
 # 1. Verificação de sintaxe
@@ -19,16 +25,20 @@ TOP = tb_porta_and
 syntax:
 	vlogan -full64 -sverilog -kdb +lint=all $(RTL_FILES) $(TB_FILES)
 
+
 # ==========================================
 # 2. Compilação / Elaboração
 # ==========================================
 compile: syntax
 	vcs -full64 -debug_access+all -kdb $(TOP)
+
+	
 # ==========================================
 # 3. Rodar simulação
 # ==========================================
 run: compile
 	./simv
+
 
 # ==========================================
 # Abrir waveform no Verdi
