@@ -66,8 +66,11 @@ run_semana03: compile_semana03
 # ==========================================
 # Abrir waveform no Verdi
 # ==========================================
-wave:
-	verdi -ssf waves.fsdb &
+wave_semana03:
+	verdi -ssf waves_semana03_round.fsdb &
+
+wave_semana03_inverse:
+	verdi -ssf waves_semana03_inverse.fsdb &
 
 # ==========================================
 # Limpeza

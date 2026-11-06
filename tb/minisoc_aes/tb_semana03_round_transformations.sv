@@ -22,6 +22,11 @@ module tb_semana03_round_transformations;
     );
 
     initial begin
+        $fsdbDumpfile("waves_semana03_round.fsdb");
+        $fsdbDumpvars(0, tb_semana03_round_transformations);
+    end
+
+    initial begin
         $display("==================================================");
         $display("  TESTBENCH SEMANA 03 - MixColumns/AddRoundKey  ");
         $display("==================================================");

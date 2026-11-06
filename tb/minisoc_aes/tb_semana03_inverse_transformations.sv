@@ -29,6 +29,11 @@ module tb_semana03_inverse_transformations;
     );
 
     initial begin
+        $fsdbDumpfile("waves_semana03_inverse.fsdb");
+        $fsdbDumpvars(0, tb_semana03_inverse_transformations);
+    end
+
+    initial begin
         $display("==================================================");
         $display("  TESTBENCH SEMANA 03 - Transformacoes inversas  ");
         $display("==================================================");
