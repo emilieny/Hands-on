@@ -43,6 +43,11 @@ module tb_semana02;
     // Entradas e saidas das tres transformacoes.
     logic [7:0] sbox_in, sbox_out;
     logic [127:0] subbytes_in, subbytes_out;
+
+    initial begin
+        $fsdbDumpfile("waves_semana02.fsdb");
+        $fsdbDumpvars(0, tb_semana02);
+    end
     logic [127:0] shiftrows_in, shiftrows_out;
 
     minisoc_aes_sbox u_sbox (
