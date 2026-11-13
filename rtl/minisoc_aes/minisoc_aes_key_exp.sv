@@ -35,12 +35,12 @@ module minisoc_aes_key_exp (
                 // K0 é a chave original fornecida na entrada.
                 assign key[round] = key_in;
             end else begin : expanded_key
-                // RotWord desloca o último byte da palavra temporária.
+                // RotWord desloca o primeiro byte da palavra para o final.
                 assign temp[round] = {
-                    key[round-1][7:0],
-                    key[round-1][31:24],
                     key[round-1][23:16],
-                    key[round-1][15:8]
+                    key[round-1][15:8],
+                    key[round-1][7:0],
+                    key[round-1][31:24]
                 };
 
                 for (byte_index = 0; byte_index < 4; byte_index = byte_index + 1) begin : sub_word
