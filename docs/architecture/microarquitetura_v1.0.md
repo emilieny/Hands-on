@@ -82,38 +82,7 @@ A FSM principal deve seguir os estados funcionais abaixo:
 IDLE -> LOAD -> INIT_ROUND -> ROUND_ACTIVE -> FINAL_ROUND -> DONE
 ```
 
-```mermaid
-stateDiagram-v2
-    [*] --> IDLE
-
-    IDLE --> LOAD: comando_lido
-    LOAD --> INIT_ROUND: payload_valido
-    LOAD --> IDLE: comando_invalido
-
-    INIT_ROUND --> ROUND_ACTIVE: estado_inicial_registrado
-
-    ROUND_ACTIVE --> ROUND_ACTIVE: rodada < final
-    ROUND_ACTIVE --> FINAL_ROUND: rodada = final - 1
-
-    FINAL_ROUND --> DONE: resultado_registrado
-    DONE --> IDLE: busy_ack
-    DONE --> DONE: aguardando_leitura
-
-    note right of IDLE
-        Aguarda evento sincronizado
-        proveniente do dominio SPI
-    end note
-
-    note right of ROUND_ACTIVE
-        Uma rodada completa
-        por ciclo de clk
-    end note
-
-    note right of FINAL_ROUND
-        Nao aplica MixColumns
-        na cifragem
-    end note
-```
+![FSM de controle do processamento AES](images/fsm_aes.png)
 
 | Estado | Comportamento |
 | --- | --- |
